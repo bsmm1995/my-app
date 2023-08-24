@@ -66,16 +66,14 @@ const decrypt = async (encryptedBody, privateKey) => {
   return Buffer.from(decryptedVal.plaintext).toString();
 }
 
-function test() {
+async function test() {
   let raw = {
     "id": 1,
     "name": "Bladimir",
     "lastname": "Minga"
   };
   makeKeys();
-  encrypt(raw, publicKeyBackend);
-  let text = 'eyJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiYWxnIjoiUlNBLU9BRVAtMjU2In0.ovjoCjvhEhY5e7CRdgEG6W6pBLDqoUWkbMy652SILmpGgOYBAOG1b0Cd-oWYoT3XiOJvEzROOjjpKua0TfwVEUiZxaYcbIgA8OJaZ_6ROPxgTYe06mrXovC_CmEr4xprL5eRD6nih_4N-iABXWdvhcmhBy3GbDtIs-I8vuL9wdbhueLA_dqL4dB2F6Xw-8nfGrFJHjppTY6MOgftYBj1CA6yC1qJCZzGTbcT29fhWYIZaMQ0If3zxQLFAmnBC9OE0ZHPB6sXyZcJCpK1VhN7DEUexi6_rHplW93UeQ_XNWWV4R92VpDOqsEq69qx7DSt3I_3PQdiRMasH0tiLhC-NA.HNKJPzlapmFa_Myebo7nWg.Z7E50TmLtMxU4tngFsEbODqFhOUws-Et3UHefvxWxAeT47TWx1n78UWEGwogAR0T.rH1ma3GZ50dvkdum1brT0w';
-  decrypt(text, privateKey);
+  //encrypt(raw, publicKeyBackend);
 
   fetch("http://localhost:8080/users/5",
     {
@@ -88,7 +86,33 @@ function test() {
       return response.json();
     })
     .then((json) => {
-      console.log("Response: {}", json.data);
+      console.log("Respuesta encriptada: ", json.data);
+      decrypt(json.data, privateKey)
+        .then((plainText) => {
+          console.log("Datos en plano: ", plainText);
+        });
+    });
+
+  let encriptData = await encrypt(raw, publicKeyBackend);
+
+  fetch("http://localhost:8080/users",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "key": publicKey
+      },
+      body: JSON.stringify({ "data": encriptData })
+    })
+    .then((response) => {
+      return response.json();
+    })
+    .then((json) => {
+      console.log("Respuesta encriptada: ", json.data);
+      decrypt(json.data, privateKey)
+        .then((plainText) => {
+          console.log("Datos en plano: ", plainText);
+        });
     });
 }
 
