@@ -30,15 +30,7 @@ VFc9Ib71QPzyq39BX+YiCI+xwDGARgO3GGA4vxvF46Tq0rYUpZ1LiC4raO4I5xrl
 NxZCLVlhLWU27FR7xu8YN18mRCCwz1FCcsEtNU4nrBK2IIIwGLCf
 -----END RSA PRIVATE KEY-----`;
 
-const publicKey = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwiSxcx5xFsNCjfDTOXz0
-M6RivgPXTTKb/PH6/x4vYl1xg/vIrG1yDGyFuyAizxNaGtA+qo2CvM3iATyDWQg3
-/8vDWiD4cIvUD2WE3XXewjyeGzQso26DceRxopI2tlSgvznjifetGCp+oj4BWrTC
-qLF1AsR2ioUS7vuXMlpxXFhJfyEGoWuQaZDwoz7CZv1KrQwlRTtkqtn4IeXpVcgW
-hg/1r0iRsvNJDokyiMVY8hrrvza2j31JGaKYqCNYSC8Jf5EV7ONQhYGgQeRVxn8j
-S8UhLOFXDdNtgHwKi02tF1bmb3Ko/s3vzPvFB8C7CsYRtHAzcx/xor2/CbT0QGYf
-UQIDAQAB
------END PUBLIC KEY-----`;
+const publicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwiSxcx5xFsNCjfDTOXz0M6RivgPXTTKb/PH6/x4vYl1xg/vIrG1yDGyFuyAizxNaGtA+qo2CvM3iATyDWQg3/8vDWiD4cIvUD2WE3XXewjyeGzQso26DceRxopI2tlSgvznjifetGCp+oj4BWrTCqLF1AsR2ioUS7vuXMlpxXFhJfyEGoWuQaZDwoz7CZv1KrQwlRTtkqtn4IeXpVcgWhg/1r0iRsvNJDokyiMVY8hrrvza2j31JGaKYqCNYSC8Jf5EV7ONQhYGgQeRVxn8jS8UhLOFXDdNtgHwKi02tF1bmb3Ko/s3vzPvFB8C7CsYRtHAzcx/xor2/CbT0QGYfUQIDAQAB";
 
 const publicKeyBackend = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAktn7eZ1lO2BTDi3GY6Ap
@@ -63,20 +55,15 @@ const makeKeys = async () => {
 const encrypt = async (raw, publicKeyBackend, format = 'compact', contentAlg = "A256GCM", alg = "RSA-OAEP") => {
   let publicKey = await JWK.asKey(publicKeyBackend, "pem");
   const buffer = Buffer.from(JSON.stringify(raw))
-  const encrypted = await JWE.createEncrypt({ format: format, contentAlg: contentAlg, fields: { alg: alg } }, publicKey)
-    .update(buffer).final();
-  console.log(encrypted);
-  return encrypted;
+  return await JWE.createEncrypt({ format: format, contentAlg: contentAlg, fields: { alg: alg } }, publicKey).update(buffer).final();
 }
 
-const decrypt = async (encryptedBody, _privateKey) => {
+const decrypt = async (encryptedBody, privateKey) => {
   let keystore = JWK.createKeyStore();
-  await keystore.add(await JWK.asKey(_privateKey, "pem"));
+  await keystore.add(await JWK.asKey(privateKey, "pem"));
   let outPut = parse.compact(encryptedBody);
   let decryptedVal = await outPut.perform(keystore);
-  let claims = Buffer.from(decryptedVal.plaintext).toString();
-  console.log(claims);
-  return claims;
+  return Buffer.from(decryptedVal.plaintext).toString();
 }
 
 function test() {
@@ -89,6 +76,20 @@ function test() {
   encrypt(raw, publicKeyBackend);
   let text = 'eyJlbmMiOiJBMTI4Q0JDLUhTMjU2IiwiYWxnIjoiUlNBLU9BRVAtMjU2In0.ovjoCjvhEhY5e7CRdgEG6W6pBLDqoUWkbMy652SILmpGgOYBAOG1b0Cd-oWYoT3XiOJvEzROOjjpKua0TfwVEUiZxaYcbIgA8OJaZ_6ROPxgTYe06mrXovC_CmEr4xprL5eRD6nih_4N-iABXWdvhcmhBy3GbDtIs-I8vuL9wdbhueLA_dqL4dB2F6Xw-8nfGrFJHjppTY6MOgftYBj1CA6yC1qJCZzGTbcT29fhWYIZaMQ0If3zxQLFAmnBC9OE0ZHPB6sXyZcJCpK1VhN7DEUexi6_rHplW93UeQ_XNWWV4R92VpDOqsEq69qx7DSt3I_3PQdiRMasH0tiLhC-NA.HNKJPzlapmFa_Myebo7nWg.Z7E50TmLtMxU4tngFsEbODqFhOUws-Et3UHefvxWxAeT47TWx1n78UWEGwogAR0T.rH1ma3GZ50dvkdum1brT0w';
   decrypt(text, privateKey);
+
+  fetch("http://localhost:8080/users/5",
+    {
+      method: "GET",
+      headers: {
+        "key": publicKey
+      }
+    })
+    .then((response) => {
+      return response.json();
+    })
+    .then((json) => {
+      console.log("Response: {}", json.data);
+    });
 }
 
 function App() {
